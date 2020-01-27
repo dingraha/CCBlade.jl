@@ -1,6 +1,7 @@
 import ForwardDiff
 
 using CCBlade: residual, Outputs, Rotor, Section, OperatingPoint
+using OpenMDAO: structs2array!, array2structs!
 
 struct PartialsWrt{TF}
     phi::TF
@@ -75,6 +76,50 @@ function residual_partials(phi, rotor, section, op)
     # Do it.
     x = pack_inputs(phi, rotor, section, op)
     return PartialsWrt(ForwardDiff.gradient(R, x))
+
+end
+
+function residual_partials_v2(phi, rotor, section, op, x::AbstractArray{T}) where {T}
+    af = section.af
+    B = rotor.B
+    turbine = rotor.turbine
+
+    # Get a version of the residual function that's compatible with ForwardDiff.
+    function R(inputs)
+
+        # Create empty structs.
+        _rotor = Rotor{T}(B, turbine)
+        _section = Section{T}(af)
+        _op = OperatingPoint{T}()
+
+        # Set the struct components with the `inputs` array.
+        _phi = inputs[1]
+        array2structs!([_rotor, _section, _op], inputs, 2)
+
+        # Get the residual.
+        res, out = residual(_phi, _rotor, _section, _op)
+
+        return res
+    end
+
+    # Create the input array for the `R` function.
+    x[1] = phi
+    structs2array!(x, [rotor, section, op], 2)
+
+    # Get the derivative of R. This will return an array with length equal to
+    # the number of elements in x.
+    deriv = ForwardDiff.gradient(R, x)
+
+    # Create new empyt structs that will hold the derivative of R.
+    drotor = Rotor{T}(B, turbine)
+    dsection = Section{T}(af)
+    dop = OperatingPoint{T, T}()
+
+    # Put the derivative into the new structs.
+    dphi = deriv[1]
+    array2structs!([drotor, dsection, dop], deriv, 2)
+
+    return dphi, drotor, dsection, dop
 
 end
 

@@ -53,6 +53,9 @@ end
 Rotor(Rhub, Rtip, B, turbine) = Rotor(Rhub, Rtip, B, turbine, zero(Rhub), zero(Rhub))
 Rotor(Rhub, Rtip, B, turbine, pitch) = Rotor(Rhub, Rtip, B, turbine, pitch, zero(Rhub))
 
+# convenience constructor for non-TF components.
+Rotor{TF}(B, turbine) where {TF} = Rotor(zero(TF), zero(TF), B, turbine, zero(TF), zero(TF))
+
 """
     Section(r, chord, theta, af)
 
@@ -91,6 +94,8 @@ function Base.setproperty!(obj::Array{Section{TF, TAF}, N}, sym::Symbol, x) wher
     setfield!.(obj, sym, x)
 end
 
+# convenience constructor for non-TF components.
+Section{TF}(af) where {TF} = Section(zero(TF), zero(TF), zero(TF), af)
 
 """
     OperatingPoint(Vx, Vy, rho, mu=1.0, asound=1.0)
@@ -118,6 +123,9 @@ end
 # convenience constructor when Re and Mach are not used.
 OperatingPoint(Vx, Vy, rho) = OperatingPoint(Vx, Vy, rho, one(rho), one(rho)) 
 
+# convenience constructor for non-TF components.
+OperatingPoint{TF}() where {TF} = OperatingPoint{TF, TF}(zero(TF), zero(TF), zero(TF), zero(TF), zero(TF))
+
 # convenience function to access fields within an array of structs
 function Base.getproperty(obj::Array{OperatingPoint{TF, TF2}, N}, sym::Symbol) where {TF, TF2, N}
     return getfield.(obj, sym)
@@ -127,7 +135,6 @@ end
 function Base.setproperty!(obj::Array{OperatingPoint{TF, TF2}, N}, sym::Symbol, x) where {TF, TF2, N}
     setfield!.(obj, sym, x)
 end
-
 
 """
     Outputs(Np, Tp, a, ap, u, v, phi, alpha, W, cl, cd, cn, ct, F, G)
