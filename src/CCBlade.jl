@@ -156,7 +156,7 @@ struct Outputs{TF}
 end
 
 # convenience constructor to initialize
-Outputs() = Outputs(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+Outputs() = Outputs(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -5*pi/180.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 
 # convenience function to access fields within an array of structs
 function Base.getproperty(obj::Array{Outputs{TF}, N}, sym::Symbol) where {TF, N}
