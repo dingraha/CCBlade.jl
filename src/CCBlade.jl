@@ -38,7 +38,7 @@ Scalar parameters defining the rotor.
 - `pitch::Float64`: pitch angle (rad).  defined same direction as twist.
 - `precone::Float64`: precone angle
 """
-mutable struct Rotor{TF, TI, TB, TF2}
+struct Rotor{TF, TI, TB, TF2}
 
     Rhub::TF
     Rtip::TF
@@ -64,7 +64,7 @@ Define sectional properties for one station along rotor
 - `theta::Float64`: corresponding twist angle (radians)
 - `af::function`: a function of the form: `cl, cd = af(alpha, Re, Mach)`
 """
-mutable struct Section{TF1, TF2, TF3, TAF}
+struct Section{TF1, TF2, TF3, TAF}
     
     r::TF1  # different types b.c. of dual numbers.  often r is fixed, while chord/theta vary.
     chord::TF2
@@ -96,7 +96,7 @@ Vx and Vy vary radially at same locations as `r` in the rotor definition.
 - `mu::Float64`: fluid dynamic viscosity (unused if Re not included in airfoil data)
 - `asound::Float64`: fluid speed of sound (unused if Mach not included in airfoil data)
 """
-mutable struct OperatingPoint{TF, TF2}
+struct OperatingPoint{TF, TF2}
     Vx::TF
     Vy::TF
     rho::TF2  # different type to accomodate ReverseDiff
@@ -676,13 +676,11 @@ function solve(rotor, section, op)
         if Vx > 0 && Vy > 0
             order = (q1, q2, q3, q4)
         elseif Vx < 0 && Vy > 0
-            # order = (q2, q1, q4, q3)
-            order = (q1, q2, q3, q4)
+            order = (q2, q1, q4, q3)
         elseif Vx > 0 && Vy < 0
             order = (q3, q4, q1, q2)
         else  # Vx[i] < 0 && Vy[i] < 0
-            # order = (q4, q3, q2, q1)
-            order = (q1, q2, q3, q4)
+            order = (q4, q3, q2, q1)
         end
 
     end
