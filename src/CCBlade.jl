@@ -20,6 +20,8 @@ export simple_op, windturbine_op
 export solve, thrusttorque, nondim
 
 
+include("cs_safe.jl")
+
 include("airfoils.jl")  # all the code related to airfoil data
 
 # --------- structs -------------
@@ -195,6 +197,11 @@ function residual(phi, rotor, section, op)
     rho = op.rho
     pitch = op.pitch
     
+    if real(chord) < zero(real(chord))
+        @warn "chord = $chord m"
+        chord = 0.1*0.0254*one(chord)
+    end
+
     # constants
     sigma_p = B*chord/(2.0*pi*r)
     sphi = sin(phi)
@@ -232,7 +239,7 @@ function residual(phi, rotor, section, op)
     ct = cl*sphi + cd*cphi
 
     # hub/tip loss
-    F = 1.0
+    F = one(chord)
     if !isnothing(rotor.tip)
         F = tip_correction(rotor.tip, r, Rhub, Rtip, phi, B)   
     end
@@ -242,7 +249,7 @@ function residual(phi, rotor, section, op)
     kp = ct*sigma_p/(4.0*F*sphi*cphi)
 
     # --- solve for induced velocities ------
-    if isapprox(Vx, 0.0, atol=1e-6)
+    if isapprox(real(Vx), 0.0, atol=1e-6)
 
         u = sign(phi)*kp*cn/ct*Vy
         v = zero(phi)
@@ -250,7 +257,7 @@ function residual(phi, rotor, section, op)
         ap = zero(phi)
         R = sign(phi) - k
 
-    elseif isapprox(Vy, 0.0, atol=1e-6)
+    elseif isapprox(real(Vy), 0.0, atol=1e-6)
         
         u = zero(phi)
         v = k*ct/cn*abs(Vx)
@@ -260,15 +267,15 @@ function residual(phi, rotor, section, op)
     
     else
 
-        if phi < 0
+        if real(phi) < 0
             k *= -1
         end
 
-        if isapprox(k, 1.0, atol=1e-6)  # state corresopnds to Vx=0, return any nonzero residual
+        if isapprox(real(k), 1.0, atol=1e-6)  # state corresopnds to Vx=0, return any nonzero residual
             return 1.0, Outputs()
         end
 
-        if k >= -2.0/3  # momentum region
+        if real(k) >= -2.0/3  # momentum region
             a = k/(1 - k)
 
         else  # empirical region
@@ -276,7 +283,7 @@ function residual(phi, rotor, section, op)
             g2 = F*(F - 2*k - 4.0/3)
             g3 = 2*F*(1 - k) - 25.0/9
 
-            if isapprox(g3, 0.0, atol=1e-6)  # avoid singularity
+            if isapprox(real(g3), 0.0, atol=1e-6)  # avoid singularity
                 a = 1.0/(2.0*sqrt(g2)) - 1
             else
                 a = (g1 + sqrt(g2)) / g3
@@ -286,11 +293,11 @@ function residual(phi, rotor, section, op)
         u = a * Vx
 
         # -------- tangential induction ----------
-        if Vx < 0
+        if real(Vx) < 0
             kp *= -1
         end
 
-        if isapprox(kp, -1.0, atol=1e-6)  # state corresopnds to Vy=0, return any nonzero residual
+        if isapprox(real(kp), -1.0, atol=1e-6)  # state corresopnds to Vy=0, return any nonzero residual
             return 1.0, Outputs()
         end
 
@@ -316,9 +323,9 @@ function residual(phi, rotor, section, op)
     # CT = 4 a (1 + a) F = 4 a G (1 + a G)\n
     # This is solved for G, then multiplied against the wake velocities.
     
-    if isapprox(Vx, 0.0, atol=1e-6)
+    if isapprox(real(Vx), 0.0, atol=1e-6)
         G = sqrt(F)
-    elseif isapprox(Vy, 0.0, atol=1e-6)
+    elseif isapprox(real(Vy), 0.0, atol=1e-6)
         G = F
     else
         G = (-1.0 + sqrt(1.0 + 4*a*(1.0 + a)*F))/(2*a)
@@ -715,8 +722,8 @@ function nondim(T, Q, Vhub, Omega, rho, rotor, rotortype)
         n = Omega/(2*pi)
         Dp = 2*Rp
 
-        if T < 0
-            eff = 0.0  # creating drag not thrust
+        if real(T) < 0
+            eff = zero(typeof(T))  # creating drag not thrust
         else
             eff = T*Vhub/P
         end
@@ -731,7 +738,11 @@ function nondim(T, Q, Vhub, Omega, rho, rotor, rotortype)
 
         CT = T / (rho * A * (Omega*Rp)^2)
         CP = P / (rho * A * (Omega*Rp)^3)  # note that CQ = CP
-        FM = CT^(3.0/2)/(sqrt(2)*CP)
+        if real(T) < 0
+            FM = zero(typeof(T))
+        else
+            FM = CT^(3.0/2)/(sqrt(2)*CP)
+        end
 
         return FM, CT, CP
     end
