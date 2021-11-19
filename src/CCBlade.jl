@@ -627,13 +627,15 @@ including 0 loads at hub/tip, using a trapezoidal rule.
 - `T::Float64`: thrust (along x-dir see Documentation).
 - `Q::Float64`: torque (along x-dir see Documentation).
 """
-function thrusttorque(rotor, sections, outputs::Vector{TO}) where TO
+function thrusttorque(rotor, sections, outputs::AbstractVector{TO}) where TO
 
     # add hub/tip for complete integration.  loads go to zero at hub/tip.
     rvec = [s.r for s in sections]
     rfull = [rotor.Rhub; rvec; rotor.Rtip]
-    Npfull = [0.0; outputs.Np; 0.0]
-    Tpfull = [0.0; outputs.Tp; 0.0]
+    # Npfull = [0.0; outputs.Np; 0.0]
+    # Tpfull = [0.0; outputs.Tp; 0.0]
+    Npfull = [0.0; getproperty.(outputs, :Np); 0.0]
+    Tpfull = [0.0; getproperty.(outputs, :Tp); 0.0]
 
     # integrate Thrust and Torque (trapezoidal)
     thrust = Npfull*cos(rotor.precone)
