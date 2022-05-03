@@ -242,7 +242,7 @@ function residual(phi, rotor, section, op)
     kp = ct*sigma_p/(4.0*F*sphi*cphi)
 
     # --- solve for induced velocities ------
-    if isapprox(Vx, 0.0, atol=1e-6)
+    if isapprox(real(Vx), 0.0, atol=1e-6)
 
         u = sign(phi)*kp*cn/ct*Vy
         v = zero(phi)
@@ -250,25 +250,25 @@ function residual(phi, rotor, section, op)
         ap = zero(phi)
         R = sign(phi) - k
 
-    elseif isapprox(Vy, 0.0, atol=1e-6)
+    elseif isapprox(real(Vy), 0.0, atol=1e-6)
         
         u = zero(phi)
-        v = k*ct/cn*abs(Vx)
+        v = k*ct/cn*FLOWMath.abs_cs_safe(Vx)
         a = zero(phi)
         ap = zero(phi)
         R = sign(Vx) + kp
     
     else
 
-        if phi < 0
+        if real(phi) < 0
             k *= -1
         end
 
-        if isapprox(k, 1.0, atol=1e-6)  # state corresopnds to Vx=0, return any nonzero residual
+        if isapprox(real(k), 1.0, atol=1e-6)  # state corresopnds to Vx=0, return any nonzero residual
             return 1.0, Outputs()
         end
 
-        if k >= -2.0/3  # momentum region
+        if real(k) >= -2.0/3  # momentum region
             a = k/(1 - k)
 
         else  # empirical region. Not Buhl's correction but instead uses Buhl with F = 1 then multiplied by F.  
@@ -283,11 +283,11 @@ function residual(phi, rotor, section, op)
         u = a * Vx
 
         # -------- tangential induction ----------
-        if Vx < 0
+        if real(Vx) < 0
             kp *= -1
         end
 
-        if isapprox(kp, -1.0, atol=1e-6)  # state corresopnds to Vy=0, return any nonzero residual
+        if isapprox(real(kp), -1.0, atol=1e-6)  # state corresopnds to Vy=0, return any nonzero residual
             return 1.0, Outputs()
         end
 
@@ -313,9 +313,9 @@ function residual(phi, rotor, section, op)
     # CT = 4 a (1 + a) F = 4 a G (1 + a G)\n
     # This is solved for G, then multiplied against the wake velocities.
     
-    if isapprox(Vx, 0.0, atol=1e-6)
+    if isapprox(real(Vx), 0.0, atol=1e-6)
         G = sqrt(F)
-    elseif isapprox(Vy, 0.0, atol=1e-6)
+    elseif isapprox(real(Vy), 0.0, atol=1e-6)
         G = F
     else
         G = (-1.0 + sqrt(1.0 + 4*a*(1.0 + a)*F))/(2*a)
@@ -430,11 +430,11 @@ function solve(rotor, section, op)
 
         startfrom90 = true  # start bracket search from 90 deg
 
-        if Vx > 0 && abs(theta) < pi/2
+        if Vx > 0 && abs(real(theta)) < pi/2
             order = (q1, q3)
-        elseif Vx < 0 && abs(theta) < pi/2
+        elseif Vx < 0 && abs(real(theta)) < pi/2
             order = (q2, q4)
-        elseif Vx > 0 && abs(theta) > pi/2
+        elseif Vx > 0 && abs(real(theta)) > pi/2
             order = (q3, q1)
         else  # Vx < 0 && abs(theta) > pi/2
             order = (q4, q2)
@@ -712,7 +712,7 @@ function nondim(T, Q, Vhub, Omega, rho, rotor, rotortype)
         n = Omega/(2*pi)
         Dp = 2*Rp
 
-        if T < 0
+        if real(T) < 0
             eff = 0.0  # creating drag not thrust
         else
             eff = T*Vhub/P

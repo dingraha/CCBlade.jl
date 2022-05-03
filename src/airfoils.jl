@@ -617,10 +617,10 @@ function rotation_correction(du::DuSeligEggers, cl, cd, cr, rR, tsr, alpha, phi=
 
     # adjustment for max correction
     amax = atan(1/0.12) - 5*pi/180  # account for singularity in Eggers (not pi/2)
-    if abs(alpha) >= amax 
+    if abs(real(alpha)) >= amax 
         adj = 0.0
-    elseif abs(alpha) > alpha_max_corr
-        adj = ((amax-abs(alpha))/(amax-alpha_max_corr))^2
+    elseif abs(real(alpha)) > alpha_max_corr
+        adj = ((amax-FLOWMath.abs_cs_safe(alpha))/(amax-alpha_max_corr))^2
     else
         adj = 1.0
     end
@@ -712,7 +712,7 @@ struct PrandtlTipHub <: TipCorrection end
 
 function tip_correction(::PrandtlTip, r, Rhub, Rtip, phi, B)
     
-    asphi = abs(sin(phi))
+    asphi = FLOWMath.abs_cs_safe(sin(phi))
     factortip = B/2.0*(Rtip/r - 1)/asphi
     F = 2.0/pi*acos(exp(-factortip))
 
@@ -722,7 +722,7 @@ end
 function tip_correction(::PrandtlTipHub, r, Rhub, Rtip, phi, B)
 
     # Prandtl's tip and hub loss factor
-    asphi = abs(sin(phi))
+    asphi = FLOWMath.abs_cs_safe(sin(phi))
     factortip = B/2.0*(Rtip/r - 1)/asphi
     Ftip = 2.0/pi*acos(exp(-factortip))
     factorhub = B/2.0*(r/Rhub - 1)/asphi
