@@ -351,7 +351,7 @@ function firstbracket(f, xmin, xmax, n, backwardsearch=false)
     fprev = f(xvec[1])
     for i = 2:n
         fnext = f(xvec[i])
-        if fprev*fnext < 0  # bracket found
+        if real(fprev)*real(fnext) < 0  # bracket found
             if backwardsearch
                 return true, xvec[i], xvec[i-1]
             else
@@ -399,8 +399,8 @@ function solve(rotor, section, op)
     theta = section.theta + op.pitch
 
     # ---- determine quadrants based on case -----
-    Vx_is_zero = isapprox(Vx, 0.0, atol=1e-6)
-    Vy_is_zero = isapprox(Vy, 0.0, atol=1e-6)
+    Vx_is_zero = isapprox(real(Vx), 0.0, atol=1e-6)
+    Vy_is_zero = isapprox(real(Vy), 0.0, atol=1e-6)
 
     # quadrants
     epsilon = 1e-6
@@ -416,11 +416,13 @@ function solve(rotor, section, op)
 
         startfrom90 = false  # start bracket at 0 deg.
 
-        if Vy > 0 && theta > 0
+        Vy_r = real(Vy)
+        theta_r = real(theta)
+        if Vy_r > 0 && theta_r > 0
             order = (q1, q2)
-        elseif Vy > 0 && theta < 0
+        elseif Vy_r > 0 && theta_r < 0
             order = (q2, q1)
-        elseif Vy < 0 && theta > 0
+        elseif Vy_r < 0 && theta_r > 0
             order = (q3, q4)
         else  # Vy < 0 && theta < 0
             order = (q4, q3)
@@ -430,11 +432,13 @@ function solve(rotor, section, op)
 
         startfrom90 = true  # start bracket search from 90 deg
 
-        if Vx > 0 && abs(real(theta)) < pi/2
+        Vx_r = real(Vx)
+        theta_r_abs = abs(real(theta))
+        if Vx_r > 0 && theta_r_abs < pi/2
             order = (q1, q3)
-        elseif Vx < 0 && abs(real(theta)) < pi/2
+        elseif Vx_r < 0 && theta_r_abs < pi/2
             order = (q2, q4)
-        elseif Vx > 0 && abs(real(theta)) > pi/2
+        elseif Vx_r > 0 && theta_r_abs > pi/2
             order = (q3, q1)
         else  # Vx < 0 && abs(theta) > pi/2
             order = (q4, q2)
@@ -444,11 +448,13 @@ function solve(rotor, section, op)
 
         startfrom90 = false
 
-        if Vx > 0 && Vy > 0
+        Vx_r = real(Vx)
+        Vy_r = real(Vy)
+        if Vx_r > 0 && Vy_r > 0
             order = (q1, q2, q3, q4)
-        elseif Vx < 0 && Vy > 0
+        elseif Vx_r < 0 && Vy_r > 0
             order = (q2, q1, q4, q3)
-        elseif Vx > 0 && Vy < 0
+        elseif Vx_r > 0 && Vy_r < 0
             order = (q3, q4, q1, q2)
         else  # Vx[i] < 0 && Vy[i] < 0
             order = (q4, q3, q2, q1)
@@ -713,7 +719,7 @@ function nondim(T, Q, Vhub, Omega, rho, rotor, rotortype)
         Dp = 2*Rp
 
         if real(T) < 0
-            eff = 0.0  # creating drag not thrust
+            eff = zero(T)  # creating drag not thrust
         else
             eff = T*Vhub/P
         end
@@ -728,7 +734,11 @@ function nondim(T, Q, Vhub, Omega, rho, rotor, rotortype)
 
         CT = T / (rho * A * (Omega*Rp)^2)
         CP = P / (rho * A * (Omega*Rp)^3)  # note that CQ = CP
-        FM = CT^(3.0/2)/(sqrt(2)*CP)
+        if real(T) < 0
+            FM = zero(T)
+        else
+            FM = CT^(3.0/2)/(sqrt(2)*CP)
+        end
 
         return FM, CT, CP
     end

@@ -730,6 +730,10 @@ J2 = FiniteDiff.finite_difference_jacobian(ccbladewrapper, x, Val{:central})
 
 @test maximum(abs.(J - J2)) < 1e-6
 
+J3 = FiniteDiff.finite_difference_jacobian(ccbladewrapper, x, Val{:complex})
+
+@test maximum(abs.(J - J3)) < 1e-12
+
 end
 
 @testset "type stability" begin

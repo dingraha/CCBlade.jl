@@ -139,12 +139,20 @@ end
 
 function afeval(af::SimpleAF, alpha, Re, Mach)
     cl = af.m*(alpha - af.alpha0)
-    cl = min(cl, af.clmax)
-    cl = max(cl, af.clmin)
 
     cd = af.cd0 + af.cd2*cl^2
 
-    return cl, cd
+    # cl = min(cl, af.clmax)
+    # cl = max(cl, af.clmin)
+    # cl = clamp(cl, af.clmin, af.clmax)
+    if real(cl) > af.clmax
+        return af.clmax, cd
+    elseif real(cl) < af.clmin
+        return af.clmin, cd
+    else
+        return cl, cd
+    end
+
 end
 
 # ---------------
