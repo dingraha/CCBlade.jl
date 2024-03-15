@@ -689,55 +689,65 @@ Vinf = 30.0
 RPM = 2100
 Omega = RPM * pi/30 
 
-function ccbladewrapper(x)
-    
-    # unpack
-    nall = length(x)
-    nvec = nall - 7
-    n = nvec ÷ 3
-
-    rp = x[1:n]
-    chordp = x[n+1:2*n]
-    thetap = x[2*n+1:3*n]
-    Rhubp = x[3*n+1]
-    Rtipp = x[3*n+2]
-    pitchp = x[3*n+3]
-    preconep = x[3*n+4]
-    Vinfp = x[3*n+5]
-    Omegap = x[3*n+6]
-    rhop = x[3*n+7]
-
-    rotor = Rotor(Rhubp, Rtipp, B; turbine=turbine, precone=preconep)
-    sections = Section.(rp, chordp, thetap, airfoils)
-    ops = simple_op.(Vinfp, Omegap, rp, rhop; pitch=pitchp)
-
-    outputs = solve.(Ref(rotor), sections, ops)
-
-    T, Q = thrusttorque(rotor, sections, outputs)
-
-    return [T; Q]
-end
-
 import ForwardDiff
-
-x = [r; chord; theta; Rhub; Rtip; pitch; precone; Vinf; Omega; rho]
-
-J = ForwardDiff.jacobian(ccbladewrapper, x)
-
-# using BenchmarkTools
-# @btime ForwardDiff.jacobian($ccbladewrapper, $x)
-# original: 584.041 μs (9910 allocations: 1.15 MiB) 
-# with ImplicitAD: 323.208 μs (11862 allocations: 747.50 KiB)
-
 import FiniteDiff
 
-J2 = FiniteDiff.finite_difference_jacobian(ccbladewrapper, x, Val{:central})
+J_no_implicitad = nothing
+for implicitad_option in (false, true)
 
-@test maximum(abs.(J - J2)) < 1e-6
+    function ccbladewrapper(x)
+        
+        # unpack
+        nall = length(x)
+        nvec = nall - 7
+        n = nvec ÷ 3
 
-J3 = FiniteDiff.finite_difference_jacobian(ccbladewrapper, x, Val{:complex})
+        rp = x[1:n]
+        chordp = x[n+1:2*n]
+        thetap = x[2*n+1:3*n]
+        Rhubp = x[3*n+1]
+        Rtipp = x[3*n+2]
+        pitchp = x[3*n+3]
+        preconep = x[3*n+4]
+        Vinfp = x[3*n+5]
+        Omegap = x[3*n+6]
+        rhop = x[3*n+7]
 
-@test maximum(abs.(J - J3)) < 1e-12
+        rotor = Rotor(Rhubp, Rtipp, B; turbine=turbine, precone=preconep)
+        sections = Section.(rp, chordp, thetap, airfoils)
+        ops = simple_op.(Vinfp, Omegap, rp, rhop; pitch=pitchp)
+
+        outputs = solve.(Ref(rotor), sections, ops, implicitad_option=implicitad_option)
+
+        T, Q = thrusttorque(rotor, sections, outputs)
+
+        return [T; Q]
+    end
+
+    x = [r; chord; theta; Rhub; Rtip; pitch; precone; Vinf; Omega; rho]
+
+    J = ForwardDiff.jacobian(ccbladewrapper, x)
+    if !implicitad_option
+        J_no_implicitad = J
+    # else
+    #     @show maximum(abs.(J .- J_no_implicitad))
+    #     maximum(abs.(J .- J_no_implicitad)) = 1.2650161806959659e-8
+    end
+
+    # using BenchmarkTools
+    # @btime ForwardDiff.jacobian($ccbladewrapper, $x)
+    # original: 584.041 μs (9910 allocations: 1.15 MiB) 
+    # with ImplicitAD: 323.208 μs (11862 allocations: 747.50 KiB)
+
+    J2 = FiniteDiff.finite_difference_jacobian(ccbladewrapper, x, Val{:central})
+
+    @test maximum(abs.(J - J2)) < 1e-6
+
+    J3 = FiniteDiff.finite_difference_jacobian(ccbladewrapper, x, Val{:complex})
+
+    @test maximum(abs.(J_no_implicitad - J3)) < 1e-12
+
+    end
 
 end
 
