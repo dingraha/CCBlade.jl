@@ -717,7 +717,7 @@ for implicitad_option in (false, true)
         sections = Section.(rp, chordp, thetap, airfoils)
         ops = simple_op.(Vinfp, Omegap, rp, rhop; pitch=pitchp)
 
-        outputs = solve.(Ref(rotor), sections, ops, implicitad_option=implicitad_option)
+        outputs = solve.(Ref(rotor), sections, ops; implicitad_option=implicitad_option, atol=1e-14)
 
         T, Q = thrusttorque(rotor, sections, outputs)
 
@@ -730,8 +730,8 @@ for implicitad_option in (false, true)
     if !implicitad_option
         J_no_implicitad = J
     # else
-    #     @show maximum(abs.(J .- J_no_implicitad))
-    #     maximum(abs.(J .- J_no_implicitad)) = 1.2650161806959659e-8
+    #   @show maximum(abs.(J .- J_no_implicitad))
+    #   maximum(abs.(J .- J_no_implicitad)) = 2.5494273359072395e-11
     end
 
     # using BenchmarkTools
@@ -745,9 +745,9 @@ for implicitad_option in (false, true)
 
     J3 = FiniteDiff.finite_difference_jacobian(ccbladewrapper, x, Val{:complex})
 
-    @test maximum(abs.(J_no_implicitad - J3)) < 1e-12
+    @test maximum(abs.(J - J3)) < 3e-11
 
-    end
+end
 
 end
 

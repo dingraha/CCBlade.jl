@@ -382,7 +382,7 @@ Solve the BEM equations for given rotor geometry and operating point.
 **Returns**
 - `outputs::Outputs`: BEM output data including loads, induction factors, etc.
 """
-function solve(rotor, section, op; npts=10, forcebackwardsearch=false, epsilon_everywhere=false, implicitad_option=true)
+function solve(rotor, section, op; npts=10, forcebackwardsearch=false, epsilon_everywhere=false, implicitad_option=true, atol=2e-12, rtol=4*eps())
 
     # error handling
     if typeof(section) <: AbstractVector
@@ -505,7 +505,7 @@ function solve(rotor, section, op; npts=10, forcebackwardsearch=false, epsilon_e
         success, phiL, phiU = firstbracket(phi -> residual(phi, xv, pv), phimin, phimax, npts, backwardsearch)
 
         function solve(x, p)
-            phistar, _ = FLOWMath.brent(phi -> residual(phi, x, p), phiL, phiU)
+            phistar, _ = FLOWMath.brent(phi -> residual(phi, x, p), phiL, phiU; atol, rtol)
             return phistar
         end
 
