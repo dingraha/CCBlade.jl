@@ -505,7 +505,8 @@ function solve(rotor, section, op; npts=10, forcebackwardsearch=false, epsilon_e
         success, phiL, phiU = firstbracket(phi -> residual(phi, xv, pv), phimin, phimax, npts, backwardsearch)
 
         function solve(x, p)
-            phistar, _ = FLOWMath.brent(phi -> residual(phi, x, p), phiL, phiU; atol, rtol)
+            phistar, outputs = FLOWMath.brent(phi -> residual(phi, x, p), phiL, phiU; atol, rtol)
+            @assert outputs.flag == "CONVERGED"
             return phistar
         end
 
