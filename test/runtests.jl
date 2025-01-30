@@ -37,7 +37,7 @@ function affunc(alpha, Re, M)
     cl = 0.084*alpha*180/pi
 
     return cl, 0.0
-end 
+end
 
 sections = Section.(r, chord, theta, Ref(affunc))
 
@@ -79,8 +79,8 @@ betavec = 90 .- out.phi*180/pi
 @test isapprox(betavec[6], 84.7113, atol=1e-3)  # using my more converged solution
 
 
-# 
-# 
+#
+#
 
 # idx = 6
 
@@ -143,7 +143,7 @@ function affunc2(alpha, Re, M)
     cd = 0.008 - 0.003*cl + 0.01*cl*cl
 
     return cl, cd
-end 
+end
 
 sections = Section.(r, chord, theta, Ref(affunc2))
 
@@ -159,7 +159,7 @@ qsim = 1e2*[0.803638686218187, 0.806984572453978, 0.809709290183008, 0.811743686
 for i = 1:60
 
     Vinf = float(i)
-    Omega = RPM * pi/30 
+    Omega = RPM * pi/30
 
     ops = simple_op.(Vinf, Omega, r, rho)
 
@@ -209,13 +209,13 @@ function affunc3(alpha, Re, M)
     cd = 0.008 - 0.003*cl + 0.01*cl*cl
 
     return cl, cd
-end 
+end
 
 
 sections = Section.(r, chord, theta, Ref(affunc3))
 
 Vinf = 5.0
-Omega = RPM * pi/30 
+Omega = RPM * pi/30
 ops = simple_op.(Vinf, Omega, r, rho)
 
 out = solve.(Ref(rotor_no_F), sections, ops)
@@ -266,7 +266,7 @@ end
 # empirical data.  Rather they are from the figures used in the documentaiton.  Qualitatively
 # the output is about right.  Minor changes in, for example, the airfoil interpolation method
 # coudl slightly change the outputs.  The main purpose of these tests is to alert us if something
-# significant changes.  
+# significant changes.
 
 Rhub = 1.5
 Rtip = 63.0
@@ -298,7 +298,7 @@ aftypes[8] = AlphaAF("airfoils/NACA64_A17.dat", radians=false)
 # indices correspond to which airfoil is used at which station
 af_idx = [1, 1, 2, 3, 4, 4, 5, 6, 6, 7, 7, 8, 8, 8, 8, 8, 8]
 
-# create airfoil array 
+# create airfoil array
 airfoils = aftypes[af_idx]
 
 sections = Section.(r, chord, theta, airfoils)
@@ -491,7 +491,7 @@ CQ = zeros(nP)
 
 
 for i = 1:nP
-    
+
     op = simple_op.(Vinf, Omega, r, rho, pitch=pitch[i])
     outputs = solve.(Ref(rotor), sections, op)
     T, Q = thrusttorque(rotor, sections, outputs)
@@ -674,7 +674,7 @@ function affunc(alpha, Re, M)
     cd = 0.008 - 0.003*cl + 0.01*cl*cl
 
     return cl, cd
-end 
+end
 
 n = length(r)
 airfoils = fill(affunc, n)
@@ -687,15 +687,54 @@ precone = 0.0
 rho = 1.225
 Vinf = 30.0
 RPM = 2100
-Omega = RPM * pi/30 
+Omega = RPM * pi/30
+
+function ccbladewrapper(x)
+
+    # unpack
+    nall = length(x)
+    nvec = nall - 7
+    n = nvec ÷ 3
+
+    rp = x[1:n]
+    chordp = x[n+1:2*n]
+    thetap = x[2*n+1:3*n]
+    Rhubp = x[3*n+1]
+    Rtipp = x[3*n+2]
+    pitchp = x[3*n+3]
+    preconep = x[3*n+4]
+    Vinfp = x[3*n+5]
+    Omegap = x[3*n+6]
+    rhop = x[3*n+7]
+
+    rotor = Rotor(Rhubp, Rtipp, B; turbine=turbine, precone=preconep)
+    sections = Section.(rp, chordp, thetap, airfoils)
+    ops = simple_op.(Vinfp, Omegap, rp, rhop; pitch=pitchp)
+
+    outputs = solve.(Ref(rotor), sections, ops)
+
+    T, Q = thrusttorque(rotor, sections, outputs)
+
+    return [T; Q]
+end
 
 import ForwardDiff
+
+x = [r; chord; theta; Rhub; Rtip; pitch; precone; Vinf; Omega; rho]
+
+J = ForwardDiff.jacobian(ccbladewrapper, x)
+
+# using BenchmarkTools
+# @btime ForwardDiff.jacobian($ccbladewrapper, $x)
+# original: 584.041 μs (9910 allocations: 1.15 MiB)
+# with ImplicitAD: 323.208 μs (11862 allocations: 747.50 KiB)
+
 import FiniteDiff
 
 J_no_implicitad = nothing
 for implicitad_option in (false, true)
 
-    function ccbladewrapper(x)
+    function ccbladewrapper_fdcheck(x)
         
         # unpack
         nall = length(x)
@@ -726,7 +765,7 @@ for implicitad_option in (false, true)
 
     x = [r; chord; theta; Rhub; Rtip; pitch; precone; Vinf; Omega; rho]
 
-    J = ForwardDiff.jacobian(ccbladewrapper, x)
+    J = ForwardDiff.jacobian(ccbladewrapper_fdcheck, x)
     if !implicitad_option
         J_no_implicitad = J
     # else
@@ -739,11 +778,11 @@ for implicitad_option in (false, true)
     # original: 584.041 μs (9910 allocations: 1.15 MiB) 
     # with ImplicitAD: 323.208 μs (11862 allocations: 747.50 KiB)
 
-    J2 = FiniteDiff.finite_difference_jacobian(ccbladewrapper, x, Val{:central})
+    J2 = FiniteDiff.finite_difference_jacobian(ccbladewrapper_fdcheck, x, Val{:central})
 
     @test maximum(abs.(J - J2)) < 1e-6
 
-    J3 = FiniteDiff.finite_difference_jacobian(ccbladewrapper, x, Val{:complex})
+    J3 = FiniteDiff.finite_difference_jacobian(ccbladewrapper_fdcheck, x, Val{:complex})
 
     @test maximum(abs.(J - J3)) < 3e-11
 
@@ -763,10 +802,10 @@ function ccbladewrapper(x)
 
         cl = 6.2*alpha
         cd = 0.008 - 0.003*cl + 0.01*cl*cl
-    
+
         return cl, cd
-    end 
-    
+    end
+
     # unpack
     nall = length(x)
     nvec = nall - 7
@@ -811,7 +850,7 @@ precone = 0.0
 rho = 1.225
 Vinf = 30.0
 RPM = 2100
-Omega = RPM * pi/30 
+Omega = RPM * pi/30
 
 xvec = [r; chord; theta; Rhub; Rtip; pitch; precone; Vinf; Omega; rho]
 
@@ -829,5 +868,66 @@ end
 
 @test checkstability()
 
+
+end
+
+using OffsetArrays
+using FillArrays
+
+@testset "esoteric arrays" begin
+    radii = rand(10)
+    chord = rand(length(radii))
+    theta = rand(length(radii))
+    sections = Section.(radii, chord, theta, alpha->(1.0, 1.0))
+
+    Vx = rand(length(radii))
+    Vy = rand(length(radii))
+    rho = rand(length(radii))
+    pitch = rand(length(radii))
+    mu = rand(length(radii))
+    asound = rand(length(radii))
+    ops = OperatingPoint.(Vx, Vy, rho, pitch, mu, asound)
+
+    Np = rand(length(radii))
+    Tp = rand(length(radii))
+    a = rand(length(radii))
+    ap = rand(length(radii))
+    u = rand(length(radii))
+    v = rand(length(radii))
+    phi = rand(length(radii))
+    alpha = rand(length(radii))
+    W = rand(length(radii))
+    cl = rand(length(radii))
+    cd = rand(length(radii))
+    cn = rand(length(radii))
+    ct = rand(length(radii))
+    F = rand(length(radii))
+    G = rand(length(radii))
+    outs = Outputs.(Np, Tp, a, ap, u, v, phi, alpha, W, cl, cd, cn, ct, F, G)
+
+    @testset "OffsetArrays" begin
+        sections_oa = OffsetArray(sections, 0:length(sections)-1)
+        @test sections[1].r ≈ sections_oa[0].r
+
+        ops_oa = OffsetArray(ops, 0:length(ops)-1)
+        @test ops[1].Vx ≈ ops_oa[0].Vx
+
+        outs_oa = OffsetArray(outs, 0:length(outs)-1)
+        @test outs[1].Np ≈ outs_oa[0].Np
+    end
+
+    @testset "FillArrays" begin
+        sections_fill = Fill(sections[1], 3)
+        @test length(sections_fill) == 3
+        sections_fill[3].r ≈ sections[1].r
+
+        ops_fill = Fill(ops[1], 3)
+        @test length(ops_fill) == 3
+        ops_fill[3].Vx ≈ ops[1].Vx
+
+        outs_fill = Fill(outs[1], 3)
+        @test length(outs_fill) == 3
+        outs_fill[3].Np ≈ outs[1].Np
+    end
 
 end
