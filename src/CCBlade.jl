@@ -87,7 +87,7 @@ end
 
 
 # convenience function to access fields within an array of structs
-function Base.getproperty(obj::Vector{<:Section}, sym::Symbol)
+function Base.getproperty(obj::Array{<:Section}, sym::Symbol)
     if sym in (:ref, :size)
         return getfield(obj, sym)
     else
@@ -128,7 +128,7 @@ OperatingPoint(Vx, Vy, rho, pitch, mu, asound) = OperatingPoint(promote(Vx, Vy, 
 OperatingPoint(Vx, Vy, rho; pitch=zero(rho), mu=one(rho), asound=one(rho)) = OperatingPoint(Vx, Vy, rho, pitch, mu, asound)
 
 # convenience function to access fields within an array of structs
-function Base.getproperty(obj::Vector{<:OperatingPoint}, sym::Symbol)
+function Base.getproperty(obj::Array{<:OperatingPoint}, sym::Symbol)
     if sym in (:ref, :size)
         return getfield(obj, sym)
     else
@@ -184,7 +184,7 @@ Outputs(Np, Tp, a, ap, u, v, phi, alpha, W, cl, cd, cn, ct, F, G) = Outputs(prom
 Outputs() = Outputs(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
 
 # convenience function to access fields within an array of structs
-function Base.getproperty(obj::Vector{<:Outputs}, sym::Symbol)
+function Base.getproperty(obj::Array{<:Outputs}, sym::Symbol)
     if sym in (:ref, :size)
         return getfield(obj, sym)
     else
