@@ -689,7 +689,6 @@ Vinf = 30.0
 RPM = 2100
 Omega = RPM * pi/30
 
-
 import ForwardDiff
 
 # using BenchmarkTools
@@ -702,7 +701,7 @@ import FiniteDiff
 J_no_implicitad = nothing
 for implicitad_option in (false, true)
 
-    function ccbladewrapper(x)
+    function ccbladewrapper_fdcheck(x)
         
         # unpack
         nall = length(x)
@@ -733,7 +732,7 @@ for implicitad_option in (false, true)
 
     x = [r; chord; theta; Rhub; Rtip; pitch; precone; Vinf; Omega; rho]
 
-    J = ForwardDiff.jacobian(ccbladewrapper, x)
+    J = ForwardDiff.jacobian(ccbladewrapper_fdcheck, x)
     if !implicitad_option
         J_no_implicitad = J
     else
@@ -746,11 +745,11 @@ for implicitad_option in (false, true)
     # original: 584.041 μs (9910 allocations: 1.15 MiB) 
     # with ImplicitAD: 323.208 μs (11862 allocations: 747.50 KiB)
 
-    J2 = FiniteDiff.finite_difference_jacobian(ccbladewrapper, x, Val{:central})
+    J2 = FiniteDiff.finite_difference_jacobian(ccbladewrapper_fdcheck, x, Val{:central})
 
     @test maximum(abs.(J - J2)) < 1e-6
 
-    J3 = FiniteDiff.finite_difference_jacobian(ccbladewrapper, x, Val{:complex})
+    J3 = FiniteDiff.finite_difference_jacobian(ccbladewrapper_fdcheck, x, Val{:complex})
 
     @test maximum(abs.(J - J3)) < 3e-11
 
