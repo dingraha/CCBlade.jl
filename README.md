@@ -1,10 +1,10 @@
 # CCBlade.jl
 
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://flow.byu.edu/CCBlade.jl/stable)
-![](https://github.com/byuflowlab/CCBlade.jl/workflows/Run%20tests/badge.svg)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://flow.byu.edu/CCBlade.jl/dev)
+[![Build Status](https://github.com/byuflowlab/CCBlade.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/byuflowlab/CCBlade.jl/actions/workflows/CI.yml?query=branch%3Amaster)
 
 
-**Summary**: A blade element momentum method for propellers and turbines. 
+**Summary**: A blade element momentum method for propellers and turbines.
 
 **Author**: Andrew Ning
 
@@ -18,6 +18,7 @@
 - Allows for flow reversals (negative inflow/rotation velocities)
 - Allows for a hover condition (only rotation, no inflow) and rotor locked (no rotation, only inflow)
 - Compatible with AD tools like ForwardDiff
+- Callable from Python, with derivatives included (optionally)
 
 **Installation**:
 
@@ -27,11 +28,12 @@
 
 **Documentation**:
 
-The [documentation](https://flow.byu.edu/CCBlade.jl/stable/) contains
+The [documentation](https://flow.byu.edu/CCBlade.jl/dev/) contains
 - A quick start tutorial to learn basic usage,
 - Guided examples to address specific or more advanced tasks,
 - A reference describing the API,
 - Theory in full detail.
+- An example calling CCBlade.jl from Python, optionally with derivatives.
 
 **Run Unit Tests**:
 
@@ -43,7 +45,3 @@ pkg> test
 **Citing**:
 
 Ning, A., “Using Blade Element Momentum Methods with Gradient-Based Design Optimization,” Structural and Multidisciplinary Optimization, Vol. 64, No. 2, pp. 994–1014, May 2021. doi:10.1007/s00158-021-02883-6
-
-**Python / OpenMDAO users**
-
-In the `openmdao` folder there is a Python wrapper to this package to enable usage from [OpenMDAO](https://openmdao.org).  This wrapper was developed/maintained by Daniel Ingraham and Justin Gray at NASA Glenn.

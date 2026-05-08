@@ -1,20 +1,29 @@
-using Documenter, CCBlade
+using CCBlade
+using Documenter
+
+DocMeta.setdocmeta!(CCBlade, :DocTestSetup, :(using CCBlade); recursive=true)
 
 makedocs(
     modules = [CCBlade],
-    format = Documenter.HTML(),
+    authors="Andrew Ning <aning@byu.edu> and contributors",
+    sitename="CCBlade.jl",
+    format=Documenter.HTML(;
+        canonical="https://flow.byu.edu/CCBlade.jl",
+        edit_link="master",
+        assets=String[],
+    ),
     pages = [
         "Intro" => "index.md",
         "Quick Start" => "tutorial.md",
         "Guided Examples" => "howto.md",
         "API Reference" => "reference.md",
-        "Theory" => "theory.md"
+        "Theory" => "theory.md",
+        "Python" => "python.md"
     ],
-    repo="https://github.com/byuflowlab/CCBlade.jl/blob/{commit}{path}#L{line}",
-    sitename="CCBlade.jl",
-    authors="Andrew Ning <aning@byu.edu>",
+    warnonly = Documenter.except(:linkcheck, :footnote),
 )
 
-deploydocs(
-    repo = "github.com/byuflowlab/CCBlade.jl.git"
+deploydocs(;
+    repo="github.com/byuflowlab/CCBlade.jl",
+    devbranch="master",
 )

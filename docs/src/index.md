@@ -1,6 +1,6 @@
 # CCBlade Documentation
 
-**Summary**: A blade element momentum method for propellers and turbines. 
+**Summary**: A blade element momentum method for propellers and turbines.
 
 **Author**: Andrew Ning
 
@@ -27,6 +27,7 @@ pkg> add CCBlade
 - More advanced or specific queries are addressed in the [guided examples](howto.md).
 - Full details of the API are listed in [reference](reference.md).
 - Full details of the theory are linked from the [theory](theory.md) page.
+- A [example](python.md) calling CCBlade.jl from Python (including derivatives).
 
 **Run Unit Tests**:
 
@@ -38,5 +39,3 @@ pkg> test
 **Citing**:
 
 Ning, A., “Using Blade Element Momentum Methods with Gradient-Based Design Optimization,” Structural and Multidisciplinary Optimization, Vol. 64, No. 2, pp. 994–1014, May 2021. doi:10.1007/s00158-021-02883-6
-
-
